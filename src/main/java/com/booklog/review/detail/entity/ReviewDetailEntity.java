@@ -17,7 +17,7 @@ import lombok.Getter;
 public class ReviewDetailEntity {
 	@Id
 	private String id;
-	private Book book;
+	private BookEntity book;
 	private String userId;
 	private String reviewWriter;
 	private String reviewTitle;
