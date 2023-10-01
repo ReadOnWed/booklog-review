@@ -27,9 +27,9 @@ public class ReviewDetailEntity {
 	private LocalDateTime updatedAt;
 	private LocalDate readStartAt;
 	private LocalDate readEndAt;
-	private int likesCount;
-	private int scrapsCount;
-	private int viewsCount;
-	private int commentCount;
+	private long likesCount;
+	private long scrapsCount;
+	private long viewsCount;
+	private long commentCount;
 	private List<Comment> comments;
 }
