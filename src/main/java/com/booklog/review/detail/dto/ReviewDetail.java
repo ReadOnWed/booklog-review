@@ -23,10 +23,10 @@ public class ReviewDetail {
 	private LocalDateTime updatedAt;
 	private LocalDate readStartAt;
 	private LocalDate readEndAt;
-	private int likesCount;
-	private int scrapsCount;
-	private int viewsCount;
-	private int commentCount;
+	private long likesCount;
+	private long scrapsCount;
+	private long viewsCount;
+	private long commentCount;
 	private List<Comment> comments;
 
 	public static ReviewDetail of(ReviewDetailEntity reviewDetailEntity){
@@ -47,5 +47,15 @@ public class ReviewDetail {
 			.commentCount(reviewDetailEntity.getCommentCount())
 			.comments(reviewDetailEntity.getComments())
 			.build();
+	}
+
+	public ReviewDetail countLikes(long likesCount){
+		this.likesCount = likesCount;
+		return this;
+	}
+
+	public ReviewDetail countScraps(long scrapsCount){
+		this.scrapsCount = scrapsCount;
+		return this;
 	}
 }
