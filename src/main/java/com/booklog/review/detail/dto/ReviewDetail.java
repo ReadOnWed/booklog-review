@@ -32,8 +32,9 @@ public class ReviewDetail {
 	public static ReviewDetail of(ReviewDetailEntity reviewDetailEntity){
 		return ReviewDetail.builder()
 			.id(reviewDetailEntity.getId())
-			.book(reviewDetailEntity.getBook())
+			.book(Book.of(reviewDetailEntity.getBook()))
 			.userId(reviewDetailEntity.getUserId())
+			.reviewTitle(reviewDetailEntity.getReviewTitle())
 			.reviewWriter(reviewDetailEntity.getReviewWriter())
 			.reviewContent(reviewDetailEntity.getReviewContent())
 			.rating(reviewDetailEntity.getRating())
