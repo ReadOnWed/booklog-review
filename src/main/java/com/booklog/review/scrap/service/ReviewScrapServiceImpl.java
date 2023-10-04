@@ -1,39 +1,66 @@
 package com.booklog.review.scrap.service;
 
-import org.springframework.stereotype.Service;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.booklog.review.scrap.dto.UserReviewScrap;
-import com.booklog.review.scrap.dto.UserReviewScrapEvent;
-import com.booklog.review.scrap.repository.ReviewScrapRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.booklog.review.detail.service.ReviewDetailService;
+import com.booklog.review.scrap.dto.ReviewScrap;
+import com.booklog.review.scrap.entity.ReviewScrapEvent;
+import com.booklog.review.scrap.repository.MongoRepositoryReviewScrapRepository;
+import com.booklog.review.scrap.repository.RedisReviewScrapRepository;
 
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class ReviewScrapServiceImpl implements ReviewScrapService {
-	private final ReviewScrapRepository reviewScrapRepository;
-	@Override
-	public boolean isScrapped(UserReviewScrap userReviewScrap) {
-		return reviewScrapRepository.isScrappedByUserId(userReviewScrap.getReviewId(), userReviewScrap.getUserId());
-	}
+	private final RedisReviewScrapRepository redisReviewScrapRepository;
+	private final MongoRepositoryReviewScrapRepository mongoReviewScrapRepository;
+	private final ReviewDetailService reviewDetailService;
 
 	@Override
-	public long scrapReview(UserReviewScrap userReviewScrap) {
-		if(isScrapped(userReviewScrap)){
-			return reviewScrapRepository.getScrapsCountByReviewId(userReviewScrap.getReviewId());
+	public boolean isScrapped(String reviewId, String userId) {
+		AtomicBoolean isLiked = new AtomicBoolean(false);
+
+		if(redisReviewScrapRepository.isScrappedForReviewByUserId(reviewId, userId)){
+			return true;
 		}
-		reviewScrapRepository.putScrapForReview(UserReviewScrapEvent.of(userReviewScrap));
-		return reviewScrapRepository.getScrapsCountByReviewId(userReviewScrap.getReviewId());
+
+		mongoReviewScrapRepository.findReviewScrapEventByReviewIdAndUserId(reviewId, userId)
+			.ifPresent(reviewLikeEvent -> {
+				redisReviewScrapRepository.postScrapByReviewId(reviewLikeEvent);
+				isLiked.set(true);
+			});
+
+		return isLiked.get();
 	}
 
 	@Override
-	public long unScrapReview(UserReviewScrap userReviewScrap) {
-		reviewScrapRepository.deleteScrapForReviewByUserId(userReviewScrap.getReviewId(), userReviewScrap.getUserId());
-		return reviewScrapRepository.getScrapsCountByReviewId(userReviewScrap.getReviewId());
+	public long scrapForReview(ReviewScrap reviewScrap) {
+		if(isScrapped(reviewScrap.getReviewId(), reviewScrap.getUserId())){
+			return redisReviewScrapRepository.countScrapsByReviewId(reviewScrap.getReviewId());
+		}
+
+		ReviewScrapEvent reviewScrapEvent = ReviewScrapEvent.of(reviewScrap);
+		redisReviewScrapRepository.postScrapByReviewId(reviewScrapEvent);
+		mongoReviewScrapRepository.save(reviewScrapEvent);
+		reviewDetailService.incrementScrapsCount(reviewScrapEvent.getReviewId());
+
+		return mongoReviewScrapRepository.countReviewScrapEventsByReviewId(reviewScrapEvent.getReviewId());
 	}
 
 	@Override
-	public long countScraps(String reviewId) {
-		return reviewScrapRepository.getScrapsCountByReviewId(reviewId);
+	public long unscrapForReview(ReviewScrap reviewScrap) {
+		mongoReviewScrapRepository.findReviewScrapEventByReviewIdAndUserId(reviewScrap.getReviewId(), reviewScrap.getUserId())
+			.ifPresent(reviewLikeEvent -> {
+				redisReviewScrapRepository.deleteScrapByReviewIdAndUserId(reviewScrap.getReviewId(), reviewScrap.getUserId());
+				mongoReviewScrapRepository.deleteById(reviewLikeEvent.getId());
+				reviewDetailService.decrementScrapsCount(reviewScrap.getReviewId());
+			});
+
+		return mongoReviewScrapRepository.countReviewScrapEventsByReviewId(reviewScrap.getReviewId());
 	}
 }

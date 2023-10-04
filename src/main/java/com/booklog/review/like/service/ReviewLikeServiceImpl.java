@@ -1,39 +1,66 @@
 package com.booklog.review.like.service;
 
-import org.springframework.stereotype.Service;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.booklog.review.like.dto.UserReviewLike;
-import com.booklog.review.like.dto.UserReviewLikeEvent;
-import com.booklog.review.like.repository.ReviewLikeRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.booklog.review.detail.service.ReviewDetailService;
+import com.booklog.review.like.dto.ReviewLike;
+import com.booklog.review.like.entity.ReviewLikeEvent;
+import com.booklog.review.like.repository.MongoRepositoryReviewLikeRepository;
+import com.booklog.review.like.repository.RedisReviewLikeRepositoryImpl;
 
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class ReviewLikeServiceImpl implements ReviewLikeService{
-	private final ReviewLikeRepository reviewLikeRepository;
-	@Override
-	public boolean isLiked(UserReviewLike userReviewLike) {
-		return reviewLikeRepository.isLikedByUserId(userReviewLike.getReviewId(), userReviewLike.getUserId());
-	}
+	private final RedisReviewLikeRepositoryImpl redisReviewLikeRepository;
+	private final MongoRepositoryReviewLikeRepository mongoReviewLikeRepository;
+	private final ReviewDetailService reviewDetailService;
 
 	@Override
-	public long likeReview(UserReviewLike userReviewLike) {
-		if(isLiked(userReviewLike)){
-			return reviewLikeRepository.getLikesCountByReviewId(userReviewLike.getReviewId());
+	public boolean isLiked(String reviewId, String userId) {
+		AtomicBoolean isLiked = new AtomicBoolean(false);
+
+		if(redisReviewLikeRepository.isLikedForReviewByUserId(reviewId, userId)){
+			return true;
 		}
-		reviewLikeRepository.putLikeForReview(UserReviewLikeEvent.of(userReviewLike));
-		return reviewLikeRepository.getLikesCountByReviewId(userReviewLike.getReviewId());
+
+		mongoReviewLikeRepository.findReviewLikeEventByReviewIdAndUserId(reviewId, userId)
+			.ifPresent(reviewLikeEvent -> {
+				redisReviewLikeRepository.postLikeByReviewId(reviewLikeEvent);
+				isLiked.set(true);
+			});
+
+		return isLiked.get();
 	}
 
 	@Override
-	public long unLikeReview(UserReviewLike userReviewLike) {
-		reviewLikeRepository.deleteLikeForReviewByUserId(userReviewLike.getReviewId(), userReviewLike.getUserId());
-		return reviewLikeRepository.getLikesCountByReviewId(userReviewLike.getReviewId());
+	public long likeForReview(ReviewLike reviewLike) {
+		if(isLiked(reviewLike.getReviewId(), reviewLike.getUserId())){
+			return redisReviewLikeRepository.countLikesByReviewId(reviewLike.getReviewId());
+		}
+
+		ReviewLikeEvent reviewLikeEvent = ReviewLikeEvent.of(reviewLike);
+		redisReviewLikeRepository.postLikeByReviewId(reviewLikeEvent);
+		mongoReviewLikeRepository.save(reviewLikeEvent);
+		reviewDetailService.incrementLikesCount(reviewLikeEvent.getReviewId());
+
+		return mongoReviewLikeRepository.countReviewLikeEventsByReviewId(reviewLikeEvent.getReviewId());
 	}
 
 	@Override
-	public long countLikes(String reviewId) {
-		return reviewLikeRepository.getLikesCountByReviewId(reviewId);
+	public long unlikeForReview(ReviewLike reviewLike) {
+		mongoReviewLikeRepository.findReviewLikeEventByReviewIdAndUserId(reviewLike.getReviewId(), reviewLike.getUserId())
+			.ifPresent(reviewLikeEvent -> {
+				redisReviewLikeRepository.deleteLikeByReviewIdAndUserId(reviewLike.getReviewId(), reviewLike.getUserId());
+				mongoReviewLikeRepository.deleteById(reviewLikeEvent.getId());
+				reviewDetailService.decrementLikesCount(reviewLike.getReviewId());
+			});
+
+		return mongoReviewLikeRepository.countReviewLikeEventsByReviewId(reviewLike.getReviewId());
 	}
 }
