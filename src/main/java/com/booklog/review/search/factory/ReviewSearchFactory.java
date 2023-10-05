@@ -17,26 +17,7 @@ public class ReviewSearchFactory {
 	private final Map<String, ReviewSearchService> reviewSearchServices;
 
 	public ReviewSearchService getReviewSearchService(SearchTermEnum searchTerm){
-		if(SearchTermEnum.REVIEW_TITLE.equals(searchTerm)){
-			return reviewSearchServices.get(SearchTermEnum.REVIEW_TITLE.getBeanName());
-		}
-		if(SearchTermEnum.REVIEW_CONTENT.equals(searchTerm)){
-			return reviewSearchServices.get(SearchTermEnum.REVIEW_CONTENT.getBeanName());
-		}
-		if(SearchTermEnum.BOOK_TITLE.equals(searchTerm)){
-			return reviewSearchServices.get(SearchTermEnum.BOOK_TITLE.getBeanName());
-		}
-		if(SearchTermEnum.REVIEW_WRITER.equals(searchTerm)){
-			return reviewSearchServices.get(SearchTermEnum.REVIEW_WRITER.getBeanName());
-		}
-		if(SearchTermEnum.USER_ID.equals(searchTerm)){
-			return reviewSearchServices.get(SearchTermEnum.USER_ID.getBeanName());
-		}
-		if(SearchTermEnum.BOOK_ID.equals(searchTerm)){
-			return reviewSearchServices.get(SearchTermEnum.BOOK_ID.getBeanName());
-		}
-		throw new IllegalArgumentException("not found search service - illegal search term");
-
+		return reviewSearchServices.get(searchTerm.getBeanName());
 	}
 
 }
