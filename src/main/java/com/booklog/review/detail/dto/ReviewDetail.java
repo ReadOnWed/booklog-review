@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.booklog.review.comment.dto.Comment;
 import com.booklog.review.detail.entity.ReviewDetailEntity;
 
 import lombok.Builder;
@@ -48,5 +49,10 @@ public class ReviewDetail {
 			.commentCount(reviewDetailEntity.getCommentCount())
 			.comments(reviewDetailEntity.getComments())
 			.build();
+	}
+
+	public ReviewDetail findComments(List<Comment> comments){
+		this.comments = comments;
+		return this;
 	}
 }
