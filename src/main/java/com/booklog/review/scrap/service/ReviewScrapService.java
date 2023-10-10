@@ -1,10 +1,11 @@
 package com.booklog.review.scrap.service;
 
-import com.booklog.review.scrap.dto.UserReviewScrap;
+import com.booklog.review.scrap.dto.ReviewScrap;
 
 public interface ReviewScrapService {
-	boolean isScrapped(UserReviewScrap userReviewScrap);
-	long scrapReview(UserReviewScrap userReviewScrap);
-	long unScrapReview(UserReviewScrap userReviewScrap);
-	long countScraps(String reviewId);
+	boolean isScrapped(String reviewId, String userId);
+
+	long scrapForReview(ReviewScrap reviewScrap);
+
+	long unscrapForReview(ReviewScrap reviewScrap);
 }

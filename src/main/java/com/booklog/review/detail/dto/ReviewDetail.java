@@ -49,14 +49,4 @@ public class ReviewDetail {
 			.comments(reviewDetailEntity.getComments())
 			.build();
 	}
-
-	public ReviewDetail countLikes(long likesCount){
-		this.likesCount = likesCount;
-		return this;
-	}
-
-	public ReviewDetail countScraps(long scrapsCount){
-		this.scrapsCount = scrapsCount;
-		return this;
-	}
 }
