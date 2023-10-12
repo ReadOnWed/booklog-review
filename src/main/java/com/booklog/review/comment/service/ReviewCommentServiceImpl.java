@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import com.booklog.review.detail.service.ReviewDetailUpdateService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -19,11 +20,13 @@ import lombok.RequiredArgsConstructor;
 @Slf4j
 public class ReviewCommentServiceImpl implements ReviewCommentService {
 	private final ReviewCommentRepository reviewCommentRepository;
+	private final ReviewDetailUpdateService reviewDetailUpdateService;
 
 	@Override
 	public Comment postComment(Comment comment) {
 		// 댓글 작성
 		if(Objects.isNull(comment.getParentCommentId())){
+			reviewDetailUpdateService.updateCommentCount(comment.getReviewId(), 1);
 			return Comment.of(reviewCommentRepository.save(CommentEntity.of(comment)));
 		}
 
@@ -34,9 +37,11 @@ public class ReviewCommentServiceImpl implements ReviewCommentService {
 	private Comment postReply(Comment reply){
 		reviewCommentRepository.save(CommentEntity.of(reply));
 
+		reviewDetailUpdateService.updateCommentCount(reply.getReviewId(), 1);
+
 		CommentEntity commentEntity = reviewCommentRepository.findCommentEntityByCommentId(reply.getParentCommentId());
 		return Comment.of(commentEntity
-				.findReplies(reviewCommentRepository.findCommentEntitiesByParentCommentId(commentEntity.getCommentId())));
+				.attachReplies(reviewCommentRepository.findCommentEntitiesByParentCommentId(commentEntity.getCommentId())));
 	}
 
 	@Override
@@ -55,20 +60,26 @@ public class ReviewCommentServiceImpl implements ReviewCommentService {
 				.delete()
 				.deletedAt();
 
+		reviewDetailUpdateService.updateCommentCount(deletedCommentEntity.getReviewId(), -1);
 		return Comment.of(reviewCommentRepository.save(deletedCommentEntity));
 
 	}
 
 	@Override
-	public List<Comment> fetchComments(String reviewId) {
-		return Comment.listOf(
-				reviewCommentRepository.findCommentEntitiesByReviewIdAndParentCommentIdIsNull(reviewId).stream()
-						.sorted(Comparator.comparing(CommentEntity::getCreatedAt))
-						.map(commentEntity -> commentEntity.findReplies(reviewCommentRepository.findCommentEntitiesByReviewIdAndParentCommentId(
-										commentEntity.getReviewId(), commentEntity.getCommentId()).stream()
-								.sorted(Comparator.comparing(CommentEntity::getCreatedAt))
-								.collect(Collectors.toList())))
-						.collect(Collectors.toList())
+	public List<Comment> getCommentsByReview(String reviewId) {
+		List<CommentEntity> commentEntities = reviewCommentRepository.findCommentEntitiesByReviewIdAndParentCommentIdIsNull(reviewId);
+
+		return Comment.listOf(commentEntities.stream()
+				.sorted(Comparator.comparing(CommentEntity::getCreatedAt))
+				.map(commentEntity -> commentEntity.attachReplies(getRepliesByComment(commentEntity)))
+				.collect(Collectors.toList())
 		);
+	}
+
+	private List<CommentEntity> getRepliesByComment(CommentEntity commentEntity){
+		return reviewCommentRepository.findCommentEntitiesByReviewIdAndParentCommentId(
+				commentEntity.getReviewId(), commentEntity.getCommentId()).stream()
+				.sorted(Comparator.comparing(CommentEntity::getCreatedAt))
+				.collect(Collectors.toList());
 	}
 }

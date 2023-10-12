@@ -41,7 +41,7 @@ public class CommentEntity {
 			.build();
 	}
 
-	public CommentEntity findReplies(List<CommentEntity> replies){
+	public CommentEntity attachReplies(List<CommentEntity> replies){
 		this.replies = replies;
 		return this;
 	}

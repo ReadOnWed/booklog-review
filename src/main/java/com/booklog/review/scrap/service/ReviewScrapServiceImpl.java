@@ -2,10 +2,10 @@ package com.booklog.review.scrap.service;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.booklog.review.detail.service.ReviewDetailUpdateService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.booklog.review.detail.service.ReviewDetailService;
 import com.booklog.review.scrap.dto.ReviewScrap;
 import com.booklog.review.scrap.entity.ReviewScrapEvent;
 import com.booklog.review.scrap.repository.MongoRepositoryReviewScrapRepository;
@@ -19,7 +19,7 @@ import lombok.RequiredArgsConstructor;
 public class ReviewScrapServiceImpl implements ReviewScrapService {
 	private final RedisReviewScrapRepository redisReviewScrapRepository;
 	private final MongoRepositoryReviewScrapRepository mongoReviewScrapRepository;
-	private final ReviewDetailService reviewDetailService;
+	private final ReviewDetailUpdateService reviewDetailUpdateService;
 
 	@Override
 	public boolean isScrapped(String reviewId, String userId) {
@@ -47,7 +47,7 @@ public class ReviewScrapServiceImpl implements ReviewScrapService {
 		ReviewScrapEvent reviewScrapEvent = ReviewScrapEvent.of(reviewScrap);
 		redisReviewScrapRepository.postScrapByReviewId(reviewScrapEvent);
 		mongoReviewScrapRepository.save(reviewScrapEvent);
-		reviewDetailService.incrementScrapsCount(reviewScrapEvent.getReviewId());
+		reviewDetailUpdateService.incrementScrapsCount(reviewScrapEvent.getReviewId());
 
 		return mongoReviewScrapRepository.countReviewScrapEventsByReviewId(reviewScrapEvent.getReviewId());
 	}
@@ -58,7 +58,7 @@ public class ReviewScrapServiceImpl implements ReviewScrapService {
 			.ifPresent(reviewLikeEvent -> {
 				redisReviewScrapRepository.deleteScrapByReviewIdAndUserId(reviewScrap.getReviewId(), reviewScrap.getUserId());
 				mongoReviewScrapRepository.deleteById(reviewLikeEvent.getId());
-				reviewDetailService.decrementScrapsCount(reviewScrap.getReviewId());
+				reviewDetailUpdateService.decrementScrapsCount(reviewScrap.getReviewId());
 			});
 
 		return mongoReviewScrapRepository.countReviewScrapEventsByReviewId(reviewScrap.getReviewId());

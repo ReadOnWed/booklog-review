@@ -9,5 +9,5 @@ public interface ReviewCommentService {
 	Comment editComment(Comment comment);
 	Comment deleteComment(Comment comment);
 
-	List<Comment> fetchComments(String reviewId);
+	List<Comment> getCommentsByReview(String reviewId);
 }

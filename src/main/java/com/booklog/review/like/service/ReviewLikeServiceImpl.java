@@ -2,10 +2,10 @@ package com.booklog.review.like.service;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.booklog.review.detail.service.ReviewDetailUpdateService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.booklog.review.detail.service.ReviewDetailService;
 import com.booklog.review.like.dto.ReviewLike;
 import com.booklog.review.like.entity.ReviewLikeEvent;
 import com.booklog.review.like.repository.MongoRepositoryReviewLikeRepository;
@@ -19,7 +19,7 @@ import lombok.RequiredArgsConstructor;
 public class ReviewLikeServiceImpl implements ReviewLikeService{
 	private final RedisReviewLikeRepositoryImpl redisReviewLikeRepository;
 	private final MongoRepositoryReviewLikeRepository mongoReviewLikeRepository;
-	private final ReviewDetailService reviewDetailService;
+	private final ReviewDetailUpdateService reviewDetailUpdateService;
 
 	@Override
 	public boolean isLiked(String reviewId, String userId) {
@@ -47,7 +47,7 @@ public class ReviewLikeServiceImpl implements ReviewLikeService{
 		ReviewLikeEvent reviewLikeEvent = ReviewLikeEvent.of(reviewLike);
 		redisReviewLikeRepository.postLikeByReviewId(reviewLikeEvent);
 		mongoReviewLikeRepository.save(reviewLikeEvent);
-		reviewDetailService.incrementLikesCount(reviewLikeEvent.getReviewId());
+		reviewDetailUpdateService.incrementLikesCount(reviewLikeEvent.getReviewId());
 
 		return mongoReviewLikeRepository.countReviewLikeEventsByReviewId(reviewLikeEvent.getReviewId());
 	}
@@ -58,7 +58,7 @@ public class ReviewLikeServiceImpl implements ReviewLikeService{
 			.ifPresent(reviewLikeEvent -> {
 				redisReviewLikeRepository.deleteLikeByReviewIdAndUserId(reviewLike.getReviewId(), reviewLike.getUserId());
 				mongoReviewLikeRepository.deleteById(reviewLikeEvent.getId());
-				reviewDetailService.decrementLikesCount(reviewLike.getReviewId());
+				reviewDetailUpdateService.decrementLikesCount(reviewLike.getReviewId());
 			});
 
 		return mongoReviewLikeRepository.countReviewLikeEventsByReviewId(reviewLike.getReviewId());
