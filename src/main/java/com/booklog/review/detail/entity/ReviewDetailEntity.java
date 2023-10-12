@@ -30,4 +30,9 @@ public class ReviewDetailEntity {
 	private long viewsCount;
 	private long commentCount;
 	private List<Comment> comments;
+
+	public ReviewDetailEntity incrementCommentCount(long count) {
+		this.commentCount += count;
+		return this;
+	}
 }

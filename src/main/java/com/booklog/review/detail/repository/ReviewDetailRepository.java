@@ -5,6 +5,9 @@ import org.springframework.stereotype.Repository;
 
 import com.booklog.review.detail.entity.ReviewDetailEntity;
 
+import java.util.Optional;
+
 @Repository
-public interface ReviewDetailRepository extends MongoRepository<ReviewDetailEntity, String> {
+public interface ReviewDetailRepository extends MongoRepository<ReviewDetailEntity, String>, MongoTemplateReviewDetailRepository {
+    Optional<ReviewDetailEntity> findReviewDetailEntityById(String reviewId);
 }

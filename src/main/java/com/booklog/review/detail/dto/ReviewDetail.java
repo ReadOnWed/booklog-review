@@ -55,4 +55,9 @@ public class ReviewDetail {
 		this.comments = comments;
 		return this;
 	}
+
+	public ReviewDetail countComments(){
+		this.commentCount = comments.size();
+		return this;
+	}
 }
