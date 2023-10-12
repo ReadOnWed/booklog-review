@@ -4,11 +4,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.booklog.review.comment.dto.Comment;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-
-import com.booklog.review.detail.dto.Book;
-import com.booklog.review.detail.dto.Comment;
 
 import lombok.Getter;
 
