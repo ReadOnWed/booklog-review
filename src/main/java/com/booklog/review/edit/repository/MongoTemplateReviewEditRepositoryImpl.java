@@ -12,7 +12,7 @@ import lombok.RequiredArgsConstructor;
 
 @Repository
 @RequiredArgsConstructor
-public class ReviewEditMongoTemplateRepository implements  ReviewEditRepository{
+public class MongoTemplateReviewEditRepositoryImpl implements MongoTemplateReviewEditRepository {
 	private final MongoTemplate mongoTemplate;
 
 	@Override
@@ -30,7 +30,7 @@ public class ReviewEditMongoTemplateRepository implements  ReviewEditRepository{
 	}
 
 	@Override
-	public long deleteById(String reviewId) {
+	public long deleteByIdAndDeleteCount(String reviewId) {
 		Query query = new Query(Criteria.where("_id").is(reviewId));
 		return mongoTemplate.remove(query, ReviewEntity.class).getDeletedCount();
 	}

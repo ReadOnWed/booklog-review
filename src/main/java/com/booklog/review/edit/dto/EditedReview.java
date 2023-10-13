@@ -25,4 +25,5 @@ public class EditedReview {
 			.readEndAt(reviewEditRequestDto.getReadEndAt())
 			.build();
 	}
+
 }
