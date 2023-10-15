@@ -19,10 +19,15 @@ public class ReviewEntity {
 	private String id;
 	private String reviewTitle;
 	private String reviewContent;
+	private String reviewWriter;
 	private int rating;
 	private LocalDate readStartAt;
 	private LocalDate readEndAt;
 	private LocalDateTime updatedAt;
+	private BookEntity book;
+	private long likesCount;
+	private long scrapsCount;
+	private long viewsCount;
 
 	public static ReviewEntity of(EditedReview editedReview){
 		return ReviewEntity.builder()
